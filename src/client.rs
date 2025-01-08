@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ffi::CString;
 use std::io;
 use std::mem::MaybeUninit;
@@ -54,6 +55,7 @@ pub struct Client {
 pub struct ClientBuilder {
     name_node: String,
     user: Option<String>,
+    config_options: HashMap<String, String>,
     kerberos_ticket_cache_path: Option<String>,
 }
 
@@ -86,6 +88,7 @@ impl ClientBuilder {
         ClientBuilder {
             name_node: name_node.to_string(),
             user: None,
+            config_options: HashMap::new(),
             kerberos_ticket_cache_path: None,
         }
     }
@@ -101,6 +104,43 @@ impl ClientBuilder {
     /// ```
     pub fn with_user(mut self, user: &str) -> ClientBuilder {
         self.user = Some(user.to_string());
+        self
+    }
+
+    /// Set a specific config option for existing ClientBuilder
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use hdrs::{Client, ClientBuilder};
+    ///
+    /// let client = ClientBuilder::new("default")
+    ///     .with_config_option("hadoop.fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAWSCredentialsProviderChain")
+    ///     .with_user("default").connect();
+    /// ```
+    pub fn with_config_option(mut self, key: &str, value: &str) -> ClientBuilder {
+        self.config_options
+            .insert(key.to_string(), value.to_string());
+        self
+    }
+
+    /// Set multiple config options for existing ClientBuilder
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use std::collections::HashMap;
+    /// use hdrs::{Client, ClientBuilder};
+    ///
+    /// let client = ClientBuilder::new("default")
+    ///     .with_config_options(HashMap::from([
+    ///         ("hadoop.fs.s3a.aws.credentials.provider".to_string(), "com.amazonaws.auth.DefaultAWSCredentialsProviderChain".to_string()),
+    ///         ("fs.azure.account.oauth.provider.type".to_string(), "org.apache.hadoop.fs.azurebfs.oauth2.DefaultAzureCredential".to_string())
+    ///     ]))
+    ///     .with_user("default").connect();
+    /// ```
+    pub fn with_config_options(mut self, conf: HashMap<String, String>) -> ClientBuilder {
+        self.config_options.extend(conf);
         self
     }
 
